@@ -1,0 +1,17 @@
+{
+  "id": "warp-pacman",
+  "name": "Pacman",
+  "short_name": "Pacman",
+  "start_url": "/pacman/",
+  "scope": "/pacman/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/pacman/pacManIcon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

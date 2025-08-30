@@ -1,0 +1,45 @@
+{
+  "resources": [
+    "pacManAudioSprite.ogg",
+    "pacManAudioSprite.m4a",
+    "pacManAudioSprite.mp3",
+    "pacManAudioSprite.ac3"
+  ],
+  "spritemap": {
+    "die": {
+      "start": 0,
+      "end": 1.5422902494331066,
+      "loop": false
+    },
+    "eatGhost": {
+      "start": 3,
+      "end": 3.5444671201814058,
+      "loop": false
+    },
+    "ghostSiren": {
+      "start": 5,
+      "end": 19.44265306122449,
+      "loop": false
+    },
+    "levelcomplete": {
+      "start": 21,
+      "end": 26.204263038548753,
+      "loop": false
+    },
+    "munch": {
+      "start": 28,
+      "end": 28.215873015873015,
+      "loop": false
+    },
+    "pacmanstart": {
+      "start": 30,
+      "end": 34.26587301587301,
+      "loop": false
+    },
+    "scared": {
+      "start": 36,
+      "end": 43.010498866213155,
+      "loop": false
+    }
+  }
+}
