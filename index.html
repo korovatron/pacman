@@ -10,15 +10,46 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="manifest" href="/pacman/manifest.json">
-  <title>Pacman</title>
-  <meta name="description" content="A javascript pacMan clone">
+  <title>Pac-Man - Classic Arcade Game | Play Online Free</title>
+  <meta name="description" content="Play the classic Pac-Man arcade game online for free! Navigate mazes, eat dots, avoid ghosts, and collect power pellets in this retro-style JavaScript game. Features authentic sound effects and smooth gameplay.">
+  <meta name="keywords" content="pacman, pac-man, arcade game, retro gaming, online game, free game, javascript game, maze game, ghosts, dots">
   <meta name="author" content="Neil Kendall">
+  
+  <!-- Open Graph tags for social media -->
+  <meta property="og:title" content="Pac-Man - Classic Arcade Game">
+  <meta property="og:description" content="Play the classic Pac-Man arcade game online for free! Navigate mazes, eat dots, avoid ghosts, and collect power pellets in this retro-style JavaScript game.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.korovatron.co.uk/pacman/">
+  <meta property="og:image" content="https://www.korovatron.co.uk/pacman/pacManIcon.png">
+  
+  <!-- Twitter Card tags -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Pac-Man - Classic Arcade Game">
+  <meta name="twitter:description" content="Play the classic Pac-Man arcade game online for free! Navigate mazes, eat dots, avoid ghosts, and collect power pellets in this retro-style JavaScript game.">
+  
+  <!-- Canonical URL to prevent redirect indexing issues -->
+  <link rel="canonical" href="https://www.korovatron.co.uk/pacman/">
+  
+  <!-- Structured data for search engines -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Game",
+    "name": "Pac-Man",
+    "description": "Classic Pac-Man arcade game playable online for free. Navigate mazes, eat dots, avoid ghosts, and collect power pellets in this retro-style JavaScript game with authentic sound effects.",
+    "url": "https://www.korovatron.co.uk/pacman/",
+    "author": {
+      "@type": "Person",
+      "name": "Neil Kendall"
+    },
+    "gamePlatform": "Web Browser",
+    "genre": "Arcade",
+    "applicationCategory": "Game"
+  }
+  </script>
 
-    <!-- Canonical URL to prevent redirect indexing issues -->
-<link rel="canonical" href="https://www.korovatron.co.uk/pacman/">
-
-<link rel="icon" href="pacManIcon.png" sizes="any" type="image/png">
-<link rel="apple-touch-icon" href="pacManIcon.png">
+  <link rel="icon" href="pacManIcon.png" sizes="any" type="image/png">
+  <link rel="apple-touch-icon" href="pacManIcon.png">
 
   <style>
     html,
@@ -29,8 +60,7 @@
       height: 100%;
       touch-action: none;
       /* Prevent canvas panning */
-      background: rgb(0, 0, 0);
-      /* Optional: dark theme base */
+      background: #000000;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -39,15 +69,24 @@
     canvas {
       transform-origin: top left;
       touch-action: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      user-select: none;
     }
   </style>
 </head>
 
 <body>
 
+  <!-- Hidden content for search engines -->
+  <div style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;" aria-hidden="true">
+    <h1>Pac-Man - Classic Arcade Game</h1>
+    <p>Experience the legendary Pac-Man arcade game right in your browser! This faithful JavaScript recreation of the classic maze chase game lets you control Pac-Man as he navigates through mazes, eating dots while avoiding colorful ghosts. Collect power pellets to turn the tables and chase the ghosts for bonus points. Features include authentic retro graphics, classic sound effects, multiple levels, and smooth gameplay. Perfect for retro gaming enthusiasts and anyone who wants to experience this iconic piece of video game history that revolutionized the arcade industry.</p>
+  </div>
+
   <!--Define HTML5 Canvas Element -->
   <canvas id="canvas" width="524" height="615">
-    Your browser does not support the HTML5 canvas tag.
+    <p>This Pac-Man game requires HTML5 canvas support. Please upgrade to a modern browser to play this classic arcade game.</p>
   </canvas>
 
   <script src="howler.min.js"></script>
