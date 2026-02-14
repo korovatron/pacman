@@ -289,6 +289,15 @@ function trackPlayEvent() {
     }
 }
 
+function trackNewLevelEvent(newLevel) {
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'PACMAN_NEW_LEVEL', {
+            'event_category': 'gameplay',
+            'level': newLevel
+        });
+    }
+}
+
 // Track arrow key presses
 document.addEventListener('keydown', (e) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
@@ -945,6 +954,7 @@ function update(secondsPassed) {
             // #region Check if level complete
             if (dotsLeft == 0) {
                 level += 1;
+                trackNewLevelEvent(level);
                 dotsLeft = 240;
                 pm.resetPosition();
                 allGhosts.forEach(ghost => {
