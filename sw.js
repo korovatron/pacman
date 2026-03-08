@@ -1,7 +1,7 @@
 // sw.js
 // Change the cache name when updating to cause cache refresh on progressive web apps
 
-const CACHE_NAME = 'pacman-cache-Feb-14-2025-20:15';
+const CACHE_NAME = 'pacman-cache-Mar-08-2026-01';
 const FILES_TO_CACHE = [
   '/pacman/',
   '/pacman/index.html',
