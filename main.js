@@ -272,48 +272,6 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => pressedKeys.delete(e.key));
 // #endregion
 
-// #region Google Analytics gameplay tracking
-let lastPlayEventTime = 0;
-const PLAY_EVENT_THROTTLE = 30000; // 30 seconds in milliseconds
-
-function trackPlayEvent() {
-    const currentTime = Date.now();
-    if (currentTime - lastPlayEventTime >= PLAY_EVENT_THROTTLE) {
-        lastPlayEventTime = currentTime;
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'PACMAN-play', {
-                'event_category': 'gameplay',
-                'event_label': 'player_interaction'
-            });
-        }
-    }
-}
-
-function trackNewLevelEvent(newLevel) {
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'PACMAN_NEW_LEVEL', {
-            'event_category': 'gameplay',
-            'level': newLevel
-        });
-    }
-}
-
-// Track arrow key presses
-document.addEventListener('keydown', (e) => {
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        trackPlayEvent();
-    }
-});
-
-// Track touch swipes
-document.addEventListener('touchmove', (e) => {
-    // Only track if there's actual movement
-    if (Math.abs(accumulatedX) > 5 || Math.abs(accumulatedY) > 5) {
-        trackPlayEvent();
-    }
-}, { passive: true });
-// #endregion
-
 let canvas;
 let context;
 let secondsPassed = 0;
@@ -954,7 +912,6 @@ function update(secondsPassed) {
             // #region Check if level complete
             if (dotsLeft == 0) {
                 level += 1;
-                trackNewLevelEvent(level);
                 dotsLeft = 240;
                 pm.resetPosition();
                 allGhosts.forEach(ghost => {
