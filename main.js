@@ -260,12 +260,20 @@ document.addEventListener('keydown', (e) => {
     switch (e.key) {
         case "ArrowLeft":
             e.preventDefault();
+            break;
         case "ArrowRight":
             e.preventDefault();
+            break;
         case "ArrowUp":
             e.preventDefault();
+            break;
         case "ArrowDown":
             e.preventDefault();
+            break;
+        case "F3":
+            e.preventDefault();
+            developerMode = !developerMode;
+            break;
     }
 }
 );
