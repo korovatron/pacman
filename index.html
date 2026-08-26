@@ -23,6 +23,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.korovatron.co.uk/pacman/">
   <meta property="og:image" content="https://www.korovatron.co.uk/pacman/pacManIcon.png">
+  <meta property="og:site_name" content="Korovatron">
   
   <!-- Twitter Card tags -->
   <meta name="twitter:card" content="summary">
@@ -36,17 +37,54 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Game",
-    "name": "Pac-Man",
-    "description": "Classic Pac-Man arcade game playable online for free. Navigate mazes, eat dots, avoid ghosts, and collect power pellets in this retro-style JavaScript game with authentic sound effects.",
-    "url": "https://www.korovatron.co.uk/pacman/",
-    "author": {
-      "@type": "Person",
-      "name": "Neil Kendall"
-    },
-    "gamePlatform": "Web Browser",
-    "genre": "Arcade",
-    "applicationCategory": "Game"
+    "@graph": [
+        {
+            "@type": "BreadcrumbList",
+            "@id": "https://www.korovatron.co.uk/pacman/#breadcrumb",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Korovatron",
+                    "item": "https://www.korovatron.co.uk/"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Pac-Man",
+                    "item": "https://www.korovatron.co.uk/pacman/"
+                }
+            ]
+        },
+        {
+            "@type": "Game",
+            "@id": "https://www.korovatron.co.uk/pacman/#game",
+            "name": "Pac-Man",
+            "description": "Classic Pac-Man arcade game playable online for free. Navigate mazes, eat dots, avoid ghosts, and collect power pellets in this retro-style JavaScript game with authentic sound effects.",
+            "url": "https://www.korovatron.co.uk/pacman/",
+            "author": {
+                "@type": "Person",
+                "name": "Neil Kendall",
+                "url": "https://www.korovatron.co.uk"
+            },
+            "publisher": {
+                "@id": "https://www.korovatron.co.uk/#organization"
+            },
+            "gamePlatform": "Web Browser",
+            "genre": "Arcade",
+            "applicationCategory": "Game",
+            "isAccessibleForFree": true,
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "GBP"
+            },
+            "image": "https://www.korovatron.co.uk/pacman/pacManIcon.png",
+            "breadcrumb": {
+                "@id": "https://www.korovatron.co.uk/pacman/#breadcrumb"
+            }
+        }
+    ]
   }
   </script>
 
