@@ -920,6 +920,9 @@ function update(secondsPassed) {
             // #region Check if level complete
             if (dotsLeft == 0) {
                 level += 1;
+                if (window.goatcounter) {
+                    window.goatcounter.count({ path: 'pac-man-level-' + level + '-started', title: 'PAC-MAN Level ' + level + ' started', event: true });
+                }
                 dotsLeft = 240;
                 pm.resetPosition();
                 allGhosts.forEach(ghost => {
