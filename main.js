@@ -1417,7 +1417,10 @@ function drawPowerPills() {
 function drawFruit() {
     if (bonusFruit.getActive() == true) {
         const image = fruitImages[levelFruit[Math.min(level, levelFruit.length) - 1]];
+        context.save();
+        context.globalAlpha = bonusFruit.getAlpha();
         context.drawImage(image, 0, 0, 32, 32, xOffset + bonusFruit.getColumn() * 16, yOffset + bonusFruit.getRow() * 16, 32, 32);
+        context.restore();
     }
 }
 
