@@ -1,7 +1,7 @@
 // sw.js
 // Change the cache name when updating to cause cache refresh on progressive web apps
 
-const CACHE_NAME = 'pacman-cache-Oct-07-2026';
+const CACHE_NAME = 'pacman-cache-Oct-07-2026-leaderboard-2';
 const FILES_TO_CACHE = [
   '/pacman/',
   '/pacman/index.html',
@@ -12,6 +12,10 @@ const FILES_TO_CACHE = [
   'pacman.js',
   'powerPill.js',
   'fruit.js',
+  'ProfanityFilter.js',
+  'Leaderboard.js',
+  'NameEntry.js',
+  'leaderboardService.js',
   'pacManIcon.png',
   'GameImages/fruits/apple.png',
   'GameImages/fruits/bell.png',
@@ -71,6 +75,11 @@ self.addEventListener('activate', event => {
 
 // Serve cached files or fetch from network
 self.addEventListener('fetch', event => {
+  // Let Firebase and other cross-origin or non-GET requests go straight to the network
+  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) {
+    return;
+  }
+
   // Always fetch fresh for HTML navigation requests
   if (event.request.mode === 'navigate') {
     event.respondWith(

@@ -189,7 +189,15 @@ const MOVE_THRESHOLD = 15;
 const TAP_THRESHOLD = 20;
 const TIME_THRESHOLD = 300;
 
+// Touches on the name entry controls must reach the browser so the keyboard and buttons work
+function isNameEntryTouch(e) {
+    return e.target instanceof Element && e.target.closest('#nameEntry') !== null;
+}
+
 document.addEventListener('touchstart', (e) => {
+    if (isNameEntryTouch(e)) {
+        return;
+    }
     e.preventDefault();
     const touch = e.touches[0];
     startX = touch.clientX;
@@ -200,6 +208,9 @@ document.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchmove', (e) => {
+    if (isNameEntryTouch(e)) {
+        return;
+    }
     e.preventDefault();
     const touch = e.touches[0];
     const currentX = touch.clientX;
@@ -229,6 +240,9 @@ document.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchend', (e) => {
+    if (isNameEntryTouch(e)) {
+        return;
+    }
     e.preventDefault();
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - startX;
@@ -255,6 +269,10 @@ document.addEventListener('touchend', (e) => {
 // #endregion
 // #region keyboard handlers
 document.addEventListener('keydown', (e) => {
+    // typing in the name box must not steer the game or lose the arrow keys' caret movement
+    if (e.target instanceof Element && e.target.id === 'nameInput') {
+        return;
+    }
     pressedKeys.add(e.key);
     // disable arrow keys default behaviour i.e. scrolling the browser window up/down
     switch (e.key) {
@@ -637,7 +655,11 @@ let ghostsMoving;
 let timer = 17; // 17 second chase mode
 let frightenedTimer = 0;
 let ghostHouseTimer = 10; // time before ghost house opens
-let game = 0; // 0=title screen, 1=playing, 2=lose life, 3=game over
+let game = 0; // 0=title screen, 1=playing, 2=lose life, 3=game over, 4=high score name entry
+let finalScore = 0;
+let finalLevel = 1;
+let nameEntryPending = false;
+let potentialLeaderboardEntryTracked = false; // only fire the goatcounter event once per game over
 let lives;
 let collision;
 let dieimg = 0;
@@ -675,6 +697,8 @@ let startMusicTimer;
 
 // #region gameLoad
 function gameLoad() {
+    loadLeaderboard();
+    resetTitleView();
     mute = false;
     ghostMode = "chase";
     timer = 17;
@@ -695,6 +719,7 @@ function gameLoad() {
 
 // #region update game state
 function update(secondsPassed) {
+    updateNameEntryLayout();
     if (secondsPassed > 0.03) {
         secondsPassed = 0.03;
     }
@@ -702,6 +727,7 @@ function update(secondsPassed) {
     switch (game) {
         case 0: // title screen
             timer += secondsPassed;
+            updateTitleView(secondsPassed);
             powerPills.forEach(pp => pp.setActive(true));
             if (timer > 0.5) {
                 if (isKeyDown(' ')) {
@@ -988,6 +1014,7 @@ function update(secondsPassed) {
                     dieimg = 1;
                     if (lives == 0) {
                         game = 3; //game over state
+                        enterGameOver();
                         gameOverDisplay = false;
                         gameOverAnimateCounter = 0;
                         accumulatedTime = 0;
@@ -1026,9 +1053,11 @@ function update(secondsPassed) {
                 }
             }
             if (isKeyDown(' ') || accumulatedTime > 15) {
-                endGame();
+                leaveGameOver();
             }
 
+            break;
+        case 4: // high score name entry, handled by the HTML controls
             break;
     }
     checkMouseClickButtons();
@@ -1098,18 +1127,26 @@ function draw() {
             drawCentredText(context, "tap or space to start", yOffset + 480);
             context.fillStyle = "yellow";
             drawCentredText(context, "A Retro Remake by Neil Kendall 2025-2026", yOffset + 570);
-            context.font = "20px Arial";
-            context.fillStyle = "white";
-            context.fillText("CHARACTER   /   NICKNAME", xOffset + 110, yOffset + 135);
-            context.fillStyle = "red";
-            context.fillText('- SHADOW             "BLINKY"', xOffset + 110, yOffset + 185);
-            context.fillStyle = "magenta";
-            context.fillText('- SPEEDY               "PINKY"', xOffset + 110, yOffset + 235);
-            context.fillStyle = "cyan";
-            context.fillText('- BASHFUL             "INKY"', xOffset + 110, yOffset + 285);
-            context.fillStyle = "orange";
-            context.fillText('- POKEY                 "CLYDE"', xOffset + 110, yOffset + 335);
-            drawGhosts();
+            // alternate the character list with the leaderboard pages
+            context.save();
+            context.globalAlpha = titleViewAlpha();
+            if (titleView.mode === 'table') {
+                context.font = "20px Arial";
+                context.fillStyle = "white";
+                context.fillText("CHARACTER   /   NICKNAME", xOffset + 110, yOffset + 135);
+                context.fillStyle = "red";
+                context.fillText('- SHADOW             "BLINKY"', xOffset + 110, yOffset + 185);
+                context.fillStyle = "magenta";
+                context.fillText('- SPEEDY               "PINKY"', xOffset + 110, yOffset + 235);
+                context.fillStyle = "cyan";
+                context.fillText('- BASHFUL             "INKY"', xOffset + 110, yOffset + 285);
+                context.fillStyle = "orange";
+                context.fillText('- POKEY                 "CLYDE"', xOffset + 110, yOffset + 335);
+                drawGhosts();
+            } else {
+                drawLeaderboardPage(context);
+            }
+            context.restore();
             if (mute == false) {
                 context.drawImage(soundOn, 0, 0, 86, 64, xOffset + 205, yOffset + 495, 43, 32);
             } else {
@@ -1156,6 +1193,9 @@ function draw() {
             if (gameOverDisplay == true) {
                 context.drawImage(gameOver, 0, 0, 176, 27, xOffset + 144, yOffset + 275, 176, 27);
             }
+            break;
+        case 4:  // high score name entry
+            drawNameEntry(context);
             break;
     }
 }
@@ -1407,7 +1447,7 @@ function drawGhosts() {
     let targetBoxY;
     allGhosts.forEach(ghost => {
         const fadeZone = 72; // Distance (in pixels) from tunnel to start fade
-        let alpha = 1;
+        let alpha = game == 0 ? titleViewAlpha() : 1; // title screen ghosts fade with the list they belong to
         switch (ghost.getGhostType()) {
             case "blinky":
                 targetBoxX = 0;
@@ -1616,7 +1656,7 @@ function performTouchTap(x, y) {
             if (mouseX > xOffset + 315 && mouseX < xOffset + 358 && mouseY > yOffset + 512 && mouseY < yOffset + 544) {
                 toggleMute();
             } else {
-                endGame();
+                leaveGameOver();
             }
             break;
         default:
@@ -1799,6 +1839,8 @@ function startGame() {
     startGameButtonPressed = false;
     blinkySpawning = true;
     blinkySpawningTimer = 0;
+    highlightedEntry = null;
+    potentialLeaderboardEntryTracked = false;
 }
 
 function endGame() {
@@ -1809,6 +1851,50 @@ function endGame() {
     drawGrid = false;
     showTargets = false;
     startGameButtonPressed = false;
+    nameEntryPending = false;
+    resetTitleView();
+}
+
+function enterGameOver() {
+    finalScore = score;
+    finalLevel = level;
+    nameEntryPending = leaderboardQualifies(finalScore);
+    trackPotentialLeaderboardEntry();
+
+    // Re-check against fresh data, since other players may have posted scores since the last read
+    if (window.leaderboardService && finalScore > 0) {
+        loadLeaderboard().then(refreshed => {
+            if (refreshed && game === 3) {
+                nameEntryPending = leaderboardQualifies(finalScore);
+                trackPotentialLeaderboardEntry();
+            }
+        });
+    }
+}
+
+// Fires once per game over, as soon as the score qualifies for the leaderboard -
+// counts the opportunity even if the player skips entering their name.
+function trackPotentialLeaderboardEntry() {
+    if (!nameEntryPending || potentialLeaderboardEntryTracked) {
+        return;
+    }
+    potentialLeaderboardEntryTracked = true;
+    if (window.goatcounter && typeof window.goatcounter.count === 'function') {
+        window.goatcounter.count({
+            path: 'pac-man-potential-leaderboard-addition',
+            title: 'PAC-MAN Potential Leaderboard Addition',
+            event: true
+        });
+    }
+}
+
+function leaveGameOver() {
+    if (nameEntryPending && leaderboardQualifies(finalScore)) {
+        nameEntryPending = false;
+        startNameEntry();
+    } else {
+        endGame();
+    }
 }
 
 // this functions stops too many munces playing at once, which can cause overload in the browser
