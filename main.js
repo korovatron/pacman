@@ -310,7 +310,7 @@ window.onload = init;
 function init() {
     // #region Load Images
     let imagesLoaded = 0;
-    const numberImages = 11; // Set number of images to load
+    const numberImages = 11 + fruitNames.length; // Set number of images to load
     walls.src = "GameImages/Walls.png";
     walls.onload = function () {
         imagesLoaded++;
@@ -389,6 +389,15 @@ function init() {
             createCanvas();
         }
     }
+    fruitNames.forEach(name => {
+        fruitImages[name].src = "GameImages/fruits/" + name + ".png";
+        fruitImages[name].onload = function () {
+            imagesLoaded++;
+            if (imagesLoaded == numberImages) {
+                createCanvas();
+            }
+        }
+    })
     // #endregion
 }
 function createCanvas() {
@@ -560,6 +569,15 @@ const controls = new Image(785, 363);
 const ready = new Image(139, 27);
 const soundOn = new Image(86, 64);
 const soundOff = new Image(86, 64);
+const fruitNames = ["cherry", "strawberry", "orange", "apple", "melon", "galaxian", "bell", "key"];
+const fruitImages = {};
+fruitNames.forEach(name => fruitImages[name] = new Image(32, 32));
+// #endregion
+// #region fruit by level (index 0 = level 1, last entry applies to every later level)
+const levelFruit = ["cherry", "strawberry", "orange", "orange", "apple", "apple", "melon", "melon", "galaxian", "galaxian", "bell", "bell", "key"];
+const levelFruitPoints = [100, 300, 500, 500, 700, 700, 1000, 1000, 2000, 2000, 3000, 3000, 5000];
+const fruitDotsEaten = [70, 170]; // fruit appears after this many dots have been eaten on a level
+const fruitDisplayTime = 8; // seconds before an uneaten fruit disappears
 // #endregion
 // #region Sounds
 
@@ -598,6 +616,7 @@ const pp2 = new powerPill(3, 26);
 const pp3 = new powerPill(21, 1);
 const pp4 = new powerPill(21, 26);
 const powerPills = [pp1, pp2, pp3, pp4];
+const bonusFruit = new fruit(17, 13);
 
 // #endregion
 // native size that canvas is drawn
@@ -886,6 +905,7 @@ function update(secondsPassed) {
                                         ghost.setEnabled(false);
                                     })
                                     game = 2;// lose life state
+                                    bonusFruit.setActive(false);
                                     pacManAnimateCounter = 0;
                                     collision = false;
                                     frightenedCollision = false;
@@ -914,12 +934,28 @@ function update(secondsPassed) {
                     }
                 }
                 playMunch();
+
+                if (fruitDotsEaten.includes(240 - dotsLeft)) {
+                    bonusFruit.spawn(fruitDisplayTime);
+                }
+            }
+            // #endregion
+
+            // #region Check for collision with fruit
+            bonusFruit.update(secondsPassed);
+            if (bonusFruit.getActive() == true) {
+                if ((Math.abs(pm.getXpos() - bonusFruit.getColumn() * 16) < 24) && (Math.abs(pm.getYpos() - bonusFruit.getRow() * 16) < 24)) {
+                    bonusFruit.setActive(false);
+                    score += levelFruitPoints[Math.min(level, levelFruitPoints.length) - 1];
+                    playMunch();
+                }
             }
             // #endregion
 
             // #region Check if level complete
             if (dotsLeft == 0) {
                 level += 1;
+                bonusFruit.setActive(false);
                 if (window.goatcounter) {
                     window.goatcounter.count({ path: 'pac-man-level-' + level + '-started', title: 'PAC-MAN Level ' + level + ' started', event: true });
                 }
@@ -1061,7 +1097,7 @@ function draw() {
             context.fillStyle = "white";
             drawCentredText(context, "tap or space to start", yOffset + 480);
             context.fillStyle = "yellow";
-            drawCentredText(context, "a javaScript game by Neil Kendall 2025", yOffset + 570);
+            drawCentredText(context, "A Retro Remake by Neil Kendall 2025-2026", yOffset + 570);
             context.font = "20px Arial";
             context.fillStyle = "white";
             context.fillText("CHARACTER   /   NICKNAME", xOffset + 110, yOffset + 135);
@@ -1097,6 +1133,7 @@ function draw() {
             drawDots();
             drawPowerPills();
             drawLivesScoreLevel();
+            drawFruit();
             drawPacMan();
             drawGhosts();
             break;
@@ -1335,6 +1372,13 @@ function drawPowerPills() {
         }
 
     })
+}
+
+function drawFruit() {
+    if (bonusFruit.getActive() == true) {
+        const image = fruitImages[levelFruit[Math.min(level, levelFruit.length) - 1]];
+        context.drawImage(image, 0, 0, 32, 32, xOffset + bonusFruit.getColumn() * 16, yOffset + bonusFruit.getRow() * 16, 32, 32);
+    }
 }
 
 function drawPacMan() {
@@ -1749,6 +1793,7 @@ function startGame() {
     dotsLeft = 240;
     copyDotMapToCurrent();
     powerPills.forEach(pp => pp.setActive(true));
+    bonusFruit.setActive(false);
     setGhostHouseTimer();
     closeGhostHouse();
     startGameButtonPressed = false;

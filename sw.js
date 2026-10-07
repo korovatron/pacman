@@ -1,7 +1,7 @@
 // sw.js
 // Change the cache name when updating to cause cache refresh on progressive web apps
 
-const CACHE_NAME = 'pacman-cache-Aug-29-2026';
+const CACHE_NAME = 'pacman-cache-Oct-07-2026';
 const FILES_TO_CACHE = [
   '/pacman/',
   '/pacman/index.html',
@@ -11,7 +11,16 @@ const FILES_TO_CACHE = [
   'ghost.js',
   'pacman.js',
   'powerPill.js',
+  'fruit.js',
   'pacManIcon.png',
+  'GameImages/fruits/apple.png',
+  'GameImages/fruits/bell.png',
+  'GameImages/fruits/cherry.png',
+  'GameImages/fruits/galaxian.png',
+  'GameImages/fruits/key.png',
+  'GameImages/fruits/melon.png',
+  'GameImages/fruits/orange.png',
+  'GameImages/fruits/strawberry.png',
   'GameImages/controls.png',
   'GameImages/Dot.png',
   'GameImages/gameOver.png',
