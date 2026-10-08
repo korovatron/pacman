@@ -194,6 +194,22 @@
       color: #000000;
     }
 
+    /* Reserves a fixed-height gap between the yellow name slots and the D-pad for status
+       and error text (e.g. "NAME NOT ALLOWED"), so messages never overlap the D-pad or
+       Submit/Skip buttons below. The height is reserved even when empty so the D-pad
+       doesn't shift position as messages come and go. */
+    .touch-name-message {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-height: 18px;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
     .touch-dpad {
       display: none;
       grid-template-columns: repeat(3, 50px);
@@ -311,6 +327,7 @@
   <div id="nameEntry" class="name-entry">
     <input id="nameInput" type="text" maxlength="10" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other" aria-label="Your name">
     <div id="touchNameDisplay" class="touch-name-display" aria-hidden="true"></div>
+    <div id="touchNameMessage" class="touch-name-message" aria-live="polite"></div>
     <div id="touchDpad" class="touch-dpad" aria-hidden="true">
       <button type="button" class="dpad-btn dpad-up" data-dpad="up" aria-label="Previous letter">&#9650;</button>
       <button type="button" class="dpad-btn dpad-left" data-dpad="left" aria-label="Move left">&#9664;</button>

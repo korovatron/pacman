@@ -8,7 +8,9 @@
 const NAME_STORAGE_KEY = 'pacManPlayerName';
 const NAME_DISALLOWED_CHARS = /[^A-Za-z0-9 _-]/g;
 const NAME_PANEL_Y = 410; // centre of the input and buttons, in canvas coordinates (desktop)
-const NAME_PANEL_TOP_TOUCH = 345; // top of the input, just below "ENTER YOUR NAME" (touch, since the slots/D-pad need more room below than a centred panel allows)
+const NAME_PANEL_TOP_TOUCH = 315; // top of the yellow letter slots (touch), shifted up from the desktop input's position to leave room for the status/error message gap above the D-pad
+const NAME_ENTER_LABEL_Y = 330; // "ENTER YOUR NAME" y position (desktop)
+const NAME_ENTER_LABEL_Y_TOUCH = 300; // "ENTER YOUR NAME" y position (touch), shifted up to match NAME_PANEL_TOP_TOUCH
 const NAME_SAVED_DELAY_MS = 1000;
 // Characters selectable with the touch D-pad's up/down letter cycle, in cycling order
 const NAME_CHARSET = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_'.split('');
@@ -24,6 +26,7 @@ function getNameEntryElements() {
         panel: document.getElementById('nameEntry'),
         input: document.getElementById('nameInput'),
         touchNameDisplay: document.getElementById('touchNameDisplay'),
+        touchNameMessage: document.getElementById('touchNameMessage'),
         touchDpad: document.getElementById('touchDpad'),
         submit: document.getElementById('nameSubmit'),
         skip: document.getElementById('nameSkip')
@@ -38,6 +41,7 @@ function getNameEntryElements() {
         if (!nameEntry.busy) {
             setNameEntryMessage('');
         }
+        updateSubmitAvailability();
     });
     input.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
@@ -114,16 +118,36 @@ function setUpDpadPressedHighlight(touchDpad) {
 function setNameEntryMessage(text, colour = 'white') {
     nameEntry.message = text;
     nameEntry.messageColour = colour;
+    if (nameEntry.touchMode) {
+        // Touch mode shows messages in the reserved HTML gap above the D-pad instead of
+        // the canvas-drawn text (see drawNameEntry()), since that position would overlap
+        // the D-pad/buttons.
+        const { touchNameMessage } = getNameEntryElements();
+        touchNameMessage.textContent = text;
+        touchNameMessage.style.color = colour;
+    }
+}
+
+// Trimmed, single-spaced name as submitName() would use it
+function getTrimmedName() {
+    const { input } = getNameEntryElements();
+    return input.value.replace(/\s+/g, ' ').trim();
+}
+
+// Submit is greyed out (rather than showing an error) whenever there's nothing to submit
+function updateSubmitAvailability() {
+    const { submit } = getNameEntryElements();
+    submit.disabled = nameEntry.busy || getTrimmedName().length === 0;
 }
 
 function setNameEntryBusy(busy) {
-    const { input, touchDpad, submit, skip } = getNameEntryElements();
+    const { input, touchDpad, skip } = getNameEntryElements();
     nameEntry.busy = busy;
     input.disabled = busy;
     touchDpad.querySelectorAll('button').forEach(button => {
         button.disabled = busy;
     });
-    submit.disabled = busy;
+    updateSubmitAvailability();
     skip.disabled = busy;
 }
 
@@ -163,10 +187,11 @@ function cycleTouchChar(delta) {
 }
 
 function startNameEntry() {
-    const { panel, input, touchNameDisplay, touchDpad, submit, skip } = getNameEntryElements();
+    const { panel, input, touchNameDisplay, touchNameMessage, touchDpad, submit, skip } = getNameEntryElements();
     nameEntry.score = finalScore;
     nameEntry.level = finalLevel;
     nameEntry.rank = leaderboardRankFor(finalScore);
+    nameEntry.touchMode = isTouchDevice();
     setNameEntryMessage('');
     setNameEntryBusy(false);
     // Undo hideNameEntrySaveControls() from a previous visit to this screen
@@ -184,13 +209,13 @@ function startNameEntry() {
     game = 4;
     panel.style.display = 'flex';
 
-    const touchMode = isTouchDevice();
-    nameEntry.touchMode = touchMode;
+    const touchMode = nameEntry.touchMode;
     panel.classList.toggle('touch-mode', touchMode);
     // On touch devices, hide the real input (so it can never summon the native keyboard)
     // and use the letter-slot display and D-pad instead; desktop keeps the real input.
     input.style.display = touchMode ? 'none' : '';
     touchNameDisplay.style.display = touchMode ? 'flex' : 'none';
+    touchNameMessage.style.display = touchMode ? 'flex' : 'none';
     touchDpad.style.display = touchMode ? 'grid' : 'none';
 
     if (touchMode) {
@@ -199,6 +224,7 @@ function startNameEntry() {
         syncTouchNameToInput();
         renderTouchNameDisplay();
     }
+    updateSubmitAvailability();
 
     updateNameEntryLayout();
     if (!touchMode) {
@@ -252,10 +278,12 @@ function submitName() {
     if (nameEntry.busy) {
         return;
     }
-    const { input } = getNameEntryElements();
-    const name = input.value.replace(/\s+/g, ' ').trim();
+    const name = getTrimmedName();
     if (name.length === 0) {
-        setNameEntryMessage('ENTER A NAME', 'red');
+        // No error message; Submit is already greyed out via updateSubmitAvailability()
+        // whenever there's nothing to submit. This is just a safety net for Enter being
+        // pressed in the real input while it's empty, which doesn't go through the
+        // (disabled) button at all.
         return;
     }
     if (!isNameAllowed(name)) {
@@ -309,9 +337,11 @@ function drawNameEntry(ctx) {
     ctx.fillStyle = "white";
     drawCentredText(ctx, "SCORE " + nameEntry.score + "   LEVEL " + nameEntry.level, 225);
     drawCentredText(ctx, "RANK #" + nameEntry.rank, 255);
-    drawCentredText(ctx, "ENTER YOUR NAME", 330);
+    drawCentredText(ctx, "ENTER YOUR NAME", nameEntry.touchMode ? NAME_ENTER_LABEL_Y_TOUCH : NAME_ENTER_LABEL_Y);
 
-    if (nameEntry.message) {
+    // Touch mode shows status/error messages in the reserved HTML gap above the D-pad
+    // instead (see setNameEntryMessage()), since this canvas position would overlap it.
+    if (nameEntry.message && !nameEntry.touchMode) {
         ctx.fillStyle = nameEntry.messageColour;
         drawCentredText(ctx, nameEntry.message, 540);
     }
