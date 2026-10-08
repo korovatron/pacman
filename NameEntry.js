@@ -71,8 +71,17 @@ function startNameEntry() {
     game = 4;
     panel.style.display = 'flex';
     updateNameEntryLayout();
-    input.focus({ preventScroll: true });
-    input.select();
+    // Only auto-focus on devices with a physical keyboard; on touch devices this would
+    // immediately pop up the on-screen keyboard before the player has chosen to type.
+    if (!isTouchDevice()) {
+        input.focus({ preventScroll: true });
+        input.select();
+    }
+}
+
+// Detects touch-capable devices (phones/tablets) so the name field isn't auto-focused there
+function isTouchDevice() {
+    return window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
 }
 
 function hideNameEntry() {
