@@ -67,6 +67,24 @@ function getNameEntryElements() {
                 break;
         }
     });
+    // Mobile browsers can leave a tapped button's :active/:focus styling "stuck" on
+    // instead of releasing it after the tap ends, so the pressed look is instead applied
+    // and cleared explicitly, and focus is dropped once the tap sequence finishes.
+    touchDpad.addEventListener('pointerdown', e => {
+        const button = e.target.closest('.dpad-btn');
+        if (button && !button.disabled) {
+            button.classList.add('dpad-btn-pressed');
+        }
+    });
+    const releaseTouchDpadButtons = () => {
+        touchDpad.querySelectorAll('.dpad-btn-pressed').forEach(button => {
+            button.classList.remove('dpad-btn-pressed');
+            button.blur();
+        });
+    };
+    touchDpad.addEventListener('pointerup', releaseTouchDpadButtons);
+    touchDpad.addEventListener('pointercancel', releaseTouchDpadButtons);
+    touchDpad.addEventListener('pointerleave', releaseTouchDpadButtons);
     submit.addEventListener('click', submitName);
     skip.addEventListener('click', skipNameEntry);
     return nameEntryElements;

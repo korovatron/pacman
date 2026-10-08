@@ -209,10 +209,13 @@
       cursor: pointer;
       -webkit-user-select: none;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
 
-    .dpad-btn:active {
+    /* Manually toggled via JS rather than :active/:focus, since mobile browsers can leave
+       :active "stuck" on a button after a tap instead of releasing it on touchend. */
+    .dpad-btn.dpad-btn-pressed {
       background: #7CFC00;
       color: #000000;
     }
