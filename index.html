@@ -130,6 +130,12 @@
 
     .name-entry.touch-mode {
       gap: 8px;
+      /* This panel is top-anchored (translate(-50%, 0)) in touch mode rather than
+         centre-anchored, so the scale must pivot from the top too - otherwise scaling
+         shifts the top edge downward by half the height difference, an error that grows
+         as the canvas shrinks (most visible in landscape, where there's no letterboxing
+         margin above/below to absorb it). */
+      transform-origin: center top;
     }
 
     .name-entry input {
