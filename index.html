@@ -126,6 +126,11 @@
       align-items: center;
       gap: 20px;
       font-family: "Courier New", Courier, monospace;
+      /* Rapid taps on the touch D-pad could otherwise be misread as a text-selection or
+         long-press gesture, popping up the native selection/"Translate" callout menu. */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .name-entry.touch-mode {

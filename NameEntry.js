@@ -142,12 +142,15 @@ function cycleTouchChar(delta) {
 }
 
 function startNameEntry() {
-    const { panel, input, touchNameDisplay, touchDpad } = getNameEntryElements();
+    const { panel, input, touchNameDisplay, touchDpad, submit, skip } = getNameEntryElements();
     nameEntry.score = finalScore;
     nameEntry.level = finalLevel;
     nameEntry.rank = leaderboardRankFor(finalScore);
     setNameEntryMessage('');
     setNameEntryBusy(false);
+    // Undo hideNameEntrySaveControls() from a previous visit to this screen
+    submit.style.display = '';
+    skip.style.display = '';
 
     let storedName = '';
     try {
@@ -215,6 +218,15 @@ function updateNameEntryLayout() {
     }
 }
 
+// Hides the D-pad and Submit/Skip buttons so the "SCORE SAVED!" message (drawn on the
+// canvas just below them) has clear space instead of overlapping still-visible controls.
+function hideNameEntrySaveControls() {
+    const { touchDpad, submit, skip } = getNameEntryElements();
+    touchDpad.style.display = 'none';
+    submit.style.display = 'none';
+    skip.style.display = 'none';
+}
+
 function submitName() {
     if (nameEntry.busy) {
         return;
@@ -241,6 +253,7 @@ function submitName() {
         .then(() => {
             const index = insertLeaderboardEntryLocally({ name, score: nameEntry.score, level: nameEntry.level, createdAt: new Date() });
             setNameEntryMessage('SCORE SAVED!', '#7CFC00');
+            hideNameEntrySaveControls();
             setTimeout(() => {
                 if (game === 4) {
                     hideNameEntry();
