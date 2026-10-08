@@ -269,8 +269,20 @@
       cursor: pointer;
     }
 
-    .name-entry button:hover,
-    .name-entry button:focus-visible {
+    /* Scoped to .name-entry-buttons specifically (not .name-entry button) so this never
+       matches the D-pad buttons, which already have their own explicit pressed-state
+       styling. The :hover part is further gated to real hover-capable devices, since on
+       touch devices tapping directly on a button triggers a synthetic/simulated :hover
+       state that then stays "stuck" until something else is tapped. */
+    @media (hover: hover) {
+      .name-entry-buttons button:hover {
+        background: #7CFC00;
+        color: #000000;
+        outline: none;
+      }
+    }
+
+    .name-entry-buttons button:focus-visible {
       background: #7CFC00;
       color: #000000;
       outline: none;
