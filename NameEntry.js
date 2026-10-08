@@ -1,16 +1,19 @@
 // High score name entry screen (game state 4). The text is drawn on the canvas and the
-// input and buttons are HTML elements laid over it. Touch devices get a custom on-screen
-// keyboard instead of focusing the real input, since native mobile keyboards are unreliable
-// to keep aligned with the canvas (the browser pans/resizes the viewport in ways that vary
-// by platform and keep drifting out of sync with the canvas underneath).
+// input and buttons are HTML elements laid over it. Touch devices get a classic arcade-style
+// letter picker (left/right to move between letter slots, up/down to cycle the letter)
+// instead of focusing the real input, since native mobile keyboards are unreliable to keep
+// aligned with the canvas (the browser pans/resizes the viewport in ways that vary by
+// platform and keep drifting out of sync with the canvas underneath).
 
 const NAME_STORAGE_KEY = 'pacManPlayerName';
 const NAME_DISALLOWED_CHARS = /[^A-Za-z0-9 _-]/g;
 const NAME_PANEL_Y = 410; // centre of the input and buttons, in canvas coordinates (desktop)
-const NAME_PANEL_TOP_TOUCH = 345; // top of the input, just below "ENTER YOUR NAME" (touch, since the on-screen keyboard needs more room below than a centred panel allows)
+const NAME_PANEL_TOP_TOUCH = 345; // top of the input, just below "ENTER YOUR NAME" (touch, since the slots/D-pad need more room below than a centred panel allows)
 const NAME_SAVED_DELAY_MS = 1000;
+// Characters selectable with the touch D-pad's up/down letter cycle, in cycling order
+const NAME_CHARSET = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_'.split('');
 
-const nameEntry = { score: 0, level: 1, rank: 1, message: '', messageColour: 'white', busy: false, touchMode: false };
+const nameEntry = { score: 0, level: 1, rank: 1, message: '', messageColour: 'white', busy: false, touchMode: false, slots: [], cursor: 0 };
 let nameEntryElements = null;
 
 function getNameEntryElements() {
@@ -20,11 +23,12 @@ function getNameEntryElements() {
     nameEntryElements = {
         panel: document.getElementById('nameEntry'),
         input: document.getElementById('nameInput'),
-        touchKeyboard: document.getElementById('touchKeyboard'),
+        touchNameDisplay: document.getElementById('touchNameDisplay'),
+        touchDpad: document.getElementById('touchDpad'),
         submit: document.getElementById('nameSubmit'),
         skip: document.getElementById('nameSkip')
     };
-    const { input, touchKeyboard, submit, skip } = nameEntryElements;
+    const { input, touchDpad, submit, skip } = nameEntryElements;
 
     input.addEventListener('input', () => {
         const cleaned = input.value.replace(NAME_DISALLOWED_CHARS, '').toUpperCase();
@@ -43,22 +47,24 @@ function getNameEntryElements() {
             skipNameEntry();
         }
     });
-    // Readonly inputs can still be focused by some browsers; immediately blur to guard
-    // against the native keyboard popping up on touch devices.
-    input.addEventListener('focus', () => {
-        if (input.readOnly) {
-            input.blur();
-        }
-    });
-    touchKeyboard.addEventListener('click', e => {
-        const key = e.target.closest('[data-key], [data-action]');
-        if (!key || nameEntry.busy) {
+    touchDpad.addEventListener('click', e => {
+        const button = e.target.closest('[data-dpad]');
+        if (!button || nameEntry.busy) {
             return;
         }
-        if (key.dataset.action === 'backspace') {
-            pressTouchBackspace();
-        } else if (key.dataset.key) {
-            pressTouchKey(key.dataset.key);
+        switch (button.dataset.dpad) {
+            case 'left':
+                moveTouchCursor(-1);
+                break;
+            case 'right':
+                moveTouchCursor(1);
+                break;
+            case 'up':
+                cycleTouchChar(1);
+                break;
+            case 'down':
+                cycleTouchChar(-1);
+                break;
         }
     });
     submit.addEventListener('click', submitName);
@@ -72,56 +78,85 @@ function setNameEntryMessage(text, colour = 'white') {
 }
 
 function setNameEntryBusy(busy) {
-    const { input, touchKeyboard, submit, skip } = getNameEntryElements();
+    const { input, touchDpad, submit, skip } = getNameEntryElements();
     nameEntry.busy = busy;
     input.disabled = busy;
-    touchKeyboard.querySelectorAll('button').forEach(key => {
-        key.disabled = busy;
+    touchDpad.querySelectorAll('button').forEach(button => {
+        button.disabled = busy;
     });
     submit.disabled = busy;
     skip.disabled = busy;
 }
 
-// Appends a character typed via the on-screen keyboard, reusing the same cleanup/validation
-// the real input already does on its 'input' event.
-function pressTouchKey(char) {
+// Writes the current slot letters into the (hidden, on touch) input so submitName() and its
+// existing validation keep working unchanged regardless of which UI is being used.
+function syncTouchNameToInput() {
     const { input } = getNameEntryElements();
-    if (input.value.length >= LEADERBOARD_NAME_LENGTH) {
-        return;
-    }
-    input.value += char;
+    input.value = nameEntry.slots.join('');
     input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function pressTouchBackspace() {
-    const { input } = getNameEntryElements();
-    input.value = input.value.slice(0, -1);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+function renderTouchNameDisplay() {
+    const { touchNameDisplay } = getNameEntryElements();
+    touchNameDisplay.innerHTML = '';
+    nameEntry.slots.forEach((char, index) => {
+        const slot = document.createElement('div');
+        slot.className = 'touch-name-slot' + (index === nameEntry.cursor ? ' touch-name-slot-active' : '');
+        slot.textContent = char === ' ' ? '' : char;
+        touchNameDisplay.appendChild(slot);
+    });
+}
+
+function moveTouchCursor(delta) {
+    nameEntry.cursor = Math.min(LEADERBOARD_NAME_LENGTH - 1, Math.max(0, nameEntry.cursor + delta));
+    renderTouchNameDisplay();
+}
+
+function cycleTouchChar(delta) {
+    let index = NAME_CHARSET.indexOf(nameEntry.slots[nameEntry.cursor]);
+    if (index === -1) {
+        index = 0;
+    }
+    index = (index + delta + NAME_CHARSET.length) % NAME_CHARSET.length;
+    nameEntry.slots[nameEntry.cursor] = NAME_CHARSET[index];
+    syncTouchNameToInput();
+    renderTouchNameDisplay();
 }
 
 function startNameEntry() {
-    const { panel, input, touchKeyboard } = getNameEntryElements();
+    const { panel, input, touchNameDisplay, touchDpad } = getNameEntryElements();
     nameEntry.score = finalScore;
     nameEntry.level = finalLevel;
     nameEntry.rank = leaderboardRankFor(finalScore);
     setNameEntryMessage('');
     setNameEntryBusy(false);
+
+    let storedName = '';
     try {
-        input.value = (localStorage.getItem(NAME_STORAGE_KEY) || '').replace(NAME_DISALLOWED_CHARS, '').toUpperCase();
+        storedName = (localStorage.getItem(NAME_STORAGE_KEY) || '').replace(NAME_DISALLOWED_CHARS, '').toUpperCase();
     } catch (e) {
-        input.value = '';
+        storedName = '';
     }
+    input.value = storedName;
+
     game = 4;
     panel.style.display = 'flex';
 
     const touchMode = isTouchDevice();
     nameEntry.touchMode = touchMode;
     panel.classList.toggle('touch-mode', touchMode);
-    // On touch devices, make the input readonly (so tapping it can't summon the native
-    // keyboard) and show our own on-screen keyboard instead; desktop keeps the real input.
-    input.readOnly = touchMode;
-    input.inputMode = touchMode ? 'none' : '';
-    touchKeyboard.style.display = touchMode ? 'flex' : 'none';
+    // On touch devices, hide the real input (so it can never summon the native keyboard)
+    // and use the letter-slot display and D-pad instead; desktop keeps the real input.
+    input.style.display = touchMode ? 'none' : '';
+    touchNameDisplay.style.display = touchMode ? 'flex' : 'none';
+    touchDpad.style.display = touchMode ? 'grid' : 'none';
+
+    if (touchMode) {
+        nameEntry.slots = storedName.padEnd(LEADERBOARD_NAME_LENGTH, ' ').slice(0, LEADERBOARD_NAME_LENGTH).split('');
+        nameEntry.cursor = Math.min(storedName.length, LEADERBOARD_NAME_LENGTH - 1);
+        syncTouchNameToInput();
+        renderTouchNameDisplay();
+    }
 
     updateNameEntryLayout();
     if (!touchMode) {
@@ -130,8 +165,8 @@ function startNameEntry() {
     }
 }
 
-// Detects touch-capable devices (phones/tablets) so they get the on-screen keyboard
-// instead of the native one
+// Detects touch-capable devices (phones/tablets) so they get the D-pad letter picker
+// instead of the native keyboard
 function isTouchDevice() {
     return window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
 }
@@ -152,7 +187,7 @@ function updateNameEntryLayout() {
     const canvasScale = canvasRect.width / baseWidth;
     panel.style.left = `${canvasRect.left + (baseWidth / 2) * canvasScale}px`;
     if (nameEntry.touchMode) {
-        // Anchored by its top edge so the keyboard below the input has room to grow
+        // Anchored by its top edge so the slot display and D-pad below have room to grow
         // downward without overlapping the score/rank text drawn above it on the canvas.
         panel.style.top = `${canvasRect.top + NAME_PANEL_TOP_TOUCH * canvasScale}px`;
         panel.style.transform = `translate(-50%, 0) scale(${canvasScale})`;
