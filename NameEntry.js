@@ -1,12 +1,16 @@
 // High score name entry screen (game state 4). The text is drawn on the canvas and the
-// input and buttons are HTML elements laid over it so mobile keyboards work.
+// input and buttons are HTML elements laid over it. Touch devices get a custom on-screen
+// keyboard instead of focusing the real input, since native mobile keyboards are unreliable
+// to keep aligned with the canvas (the browser pans/resizes the viewport in ways that vary
+// by platform and keep drifting out of sync with the canvas underneath).
 
 const NAME_STORAGE_KEY = 'pacManPlayerName';
 const NAME_DISALLOWED_CHARS = /[^A-Za-z0-9 _-]/g;
-const NAME_PANEL_Y = 410; // centre of the input and buttons, in canvas coordinates
+const NAME_PANEL_Y = 410; // centre of the input and buttons, in canvas coordinates (desktop)
+const NAME_PANEL_TOP_TOUCH = 345; // top of the input, just below "ENTER YOUR NAME" (touch, since the on-screen keyboard needs more room below than a centred panel allows)
 const NAME_SAVED_DELAY_MS = 1000;
 
-const nameEntry = { score: 0, level: 1, rank: 1, message: '', messageColour: 'white', busy: false };
+const nameEntry = { score: 0, level: 1, rank: 1, message: '', messageColour: 'white', busy: false, touchMode: false };
 let nameEntryElements = null;
 
 function getNameEntryElements() {
@@ -16,10 +20,11 @@ function getNameEntryElements() {
     nameEntryElements = {
         panel: document.getElementById('nameEntry'),
         input: document.getElementById('nameInput'),
+        touchKeyboard: document.getElementById('touchKeyboard'),
         submit: document.getElementById('nameSubmit'),
         skip: document.getElementById('nameSkip')
     };
-    const { input, submit, skip } = nameEntryElements;
+    const { input, touchKeyboard, submit, skip } = nameEntryElements;
 
     input.addEventListener('input', () => {
         const cleaned = input.value.replace(NAME_DISALLOWED_CHARS, '').toUpperCase();
@@ -38,6 +43,24 @@ function getNameEntryElements() {
             skipNameEntry();
         }
     });
+    // Readonly inputs can still be focused by some browsers; immediately blur to guard
+    // against the native keyboard popping up on touch devices.
+    input.addEventListener('focus', () => {
+        if (input.readOnly) {
+            input.blur();
+        }
+    });
+    touchKeyboard.addEventListener('click', e => {
+        const key = e.target.closest('[data-key], [data-action]');
+        if (!key || nameEntry.busy) {
+            return;
+        }
+        if (key.dataset.action === 'backspace') {
+            pressTouchBackspace();
+        } else if (key.dataset.key) {
+            pressTouchKey(key.dataset.key);
+        }
+    });
     submit.addEventListener('click', submitName);
     skip.addEventListener('click', skipNameEntry);
     return nameEntryElements;
@@ -49,15 +72,35 @@ function setNameEntryMessage(text, colour = 'white') {
 }
 
 function setNameEntryBusy(busy) {
-    const { input, submit, skip } = getNameEntryElements();
+    const { input, touchKeyboard, submit, skip } = getNameEntryElements();
     nameEntry.busy = busy;
     input.disabled = busy;
+    touchKeyboard.querySelectorAll('button').forEach(key => {
+        key.disabled = busy;
+    });
     submit.disabled = busy;
     skip.disabled = busy;
 }
 
+// Appends a character typed via the on-screen keyboard, reusing the same cleanup/validation
+// the real input already does on its 'input' event.
+function pressTouchKey(char) {
+    const { input } = getNameEntryElements();
+    if (input.value.length >= LEADERBOARD_NAME_LENGTH) {
+        return;
+    }
+    input.value += char;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function pressTouchBackspace() {
+    const { input } = getNameEntryElements();
+    input.value = input.value.slice(0, -1);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function startNameEntry() {
-    const { panel, input } = getNameEntryElements();
+    const { panel, input, touchKeyboard } = getNameEntryElements();
     nameEntry.score = finalScore;
     nameEntry.level = finalLevel;
     nameEntry.rank = leaderboardRankFor(finalScore);
@@ -70,16 +113,25 @@ function startNameEntry() {
     }
     game = 4;
     panel.style.display = 'flex';
+
+    const touchMode = isTouchDevice();
+    nameEntry.touchMode = touchMode;
+    panel.classList.toggle('touch-mode', touchMode);
+    // On touch devices, make the input readonly (so tapping it can't summon the native
+    // keyboard) and show our own on-screen keyboard instead; desktop keeps the real input.
+    input.readOnly = touchMode;
+    input.inputMode = touchMode ? 'none' : '';
+    touchKeyboard.style.display = touchMode ? 'flex' : 'none';
+
     updateNameEntryLayout();
-    // Only auto-focus on devices with a physical keyboard; on touch devices this would
-    // immediately pop up the on-screen keyboard before the player has chosen to type.
-    if (!isTouchDevice()) {
+    if (!touchMode) {
         input.focus({ preventScroll: true });
         input.select();
     }
 }
 
-// Detects touch-capable devices (phones/tablets) so the name field isn't auto-focused there
+// Detects touch-capable devices (phones/tablets) so they get the on-screen keyboard
+// instead of the native one
 function isTouchDevice() {
     return window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
 }
@@ -98,17 +150,16 @@ function updateNameEntryLayout() {
     const { panel } = getNameEntryElements();
     const canvasRect = canvas.getBoundingClientRect();
     const canvasScale = canvasRect.width / baseWidth;
-    // getBoundingClientRect() is relative to the layout viewport, but this panel uses
-    // position: fixed, which mobile browsers anchor to the visual viewport instead. When
-    // the on-screen keyboard opens, iOS pans the visual viewport to keep the focused input
-    // in view, so without this correction the panel drifts away from the canvas underneath
-    // it. Subtracting the visual viewport's offset converts back to visual-viewport space.
-    const viewport = window.visualViewport;
-    const viewportOffsetX = viewport ? viewport.offsetLeft : 0;
-    const viewportOffsetY = viewport ? viewport.offsetTop : 0;
-    panel.style.left = `${canvasRect.left + (baseWidth / 2) * canvasScale - viewportOffsetX}px`;
-    panel.style.top = `${canvasRect.top + NAME_PANEL_Y * canvasScale - viewportOffsetY}px`;
-    panel.style.transform = `translate(-50%, -50%) scale(${canvasScale})`;
+    panel.style.left = `${canvasRect.left + (baseWidth / 2) * canvasScale}px`;
+    if (nameEntry.touchMode) {
+        // Anchored by its top edge so the keyboard below the input has room to grow
+        // downward without overlapping the score/rank text drawn above it on the canvas.
+        panel.style.top = `${canvasRect.top + NAME_PANEL_TOP_TOUCH * canvasScale}px`;
+        panel.style.transform = `translate(-50%, 0) scale(${canvasScale})`;
+    } else {
+        panel.style.top = `${canvasRect.top + NAME_PANEL_Y * canvasScale}px`;
+        panel.style.transform = `translate(-50%, -50%) scale(${canvasScale})`;
+    }
 }
 
 function submitName() {

@@ -128,6 +128,10 @@
       font-family: "Courier New", Courier, monospace;
     }
 
+    .name-entry.touch-mode {
+      gap: 8px;
+    }
+
     .name-entry input {
       box-sizing: border-box;
       width: 300px;
@@ -145,6 +149,62 @@
       outline: none;
       -webkit-user-select: text;
       user-select: text;
+    }
+
+    .name-entry input[readonly] {
+      caret-color: transparent;
+    }
+
+    /* On-screen keyboard used on touch devices instead of the native mobile keyboard,
+       which is unreliable to keep aligned with the canvas when it opens/closes. */
+    .touch-keyboard {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .touch-keyboard-row {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .touch-key {
+      box-sizing: border-box;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 2px solid #7CFC00;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #7CFC00;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .touch-key:active {
+      background: #7CFC00;
+      color: #000000;
+    }
+
+    .touch-key:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .touch-key-space {
+      width: 120px;
+    }
+
+    .touch-key-wide {
+      width: 70px;
     }
 
     .name-entry-buttons {
@@ -195,6 +255,58 @@
 
   <div id="nameEntry" class="name-entry">
     <input id="nameInput" type="text" maxlength="10" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other" aria-label="Your name">
+    <div id="touchKeyboard" class="touch-keyboard" aria-hidden="true">
+      <div class="touch-keyboard-row">
+        <button type="button" class="touch-key" data-key="Q">Q</button>
+        <button type="button" class="touch-key" data-key="W">W</button>
+        <button type="button" class="touch-key" data-key="E">E</button>
+        <button type="button" class="touch-key" data-key="R">R</button>
+        <button type="button" class="touch-key" data-key="T">T</button>
+        <button type="button" class="touch-key" data-key="Y">Y</button>
+        <button type="button" class="touch-key" data-key="U">U</button>
+        <button type="button" class="touch-key" data-key="I">I</button>
+        <button type="button" class="touch-key" data-key="O">O</button>
+        <button type="button" class="touch-key" data-key="P">P</button>
+      </div>
+      <div class="touch-keyboard-row">
+        <button type="button" class="touch-key" data-key="A">A</button>
+        <button type="button" class="touch-key" data-key="S">S</button>
+        <button type="button" class="touch-key" data-key="D">D</button>
+        <button type="button" class="touch-key" data-key="F">F</button>
+        <button type="button" class="touch-key" data-key="G">G</button>
+        <button type="button" class="touch-key" data-key="H">H</button>
+        <button type="button" class="touch-key" data-key="J">J</button>
+        <button type="button" class="touch-key" data-key="K">K</button>
+        <button type="button" class="touch-key" data-key="L">L</button>
+      </div>
+      <div class="touch-keyboard-row">
+        <button type="button" class="touch-key" data-key="Z">Z</button>
+        <button type="button" class="touch-key" data-key="X">X</button>
+        <button type="button" class="touch-key" data-key="C">C</button>
+        <button type="button" class="touch-key" data-key="V">V</button>
+        <button type="button" class="touch-key" data-key="B">B</button>
+        <button type="button" class="touch-key" data-key="N">N</button>
+        <button type="button" class="touch-key" data-key="M">M</button>
+      </div>
+      <div class="touch-keyboard-row">
+        <button type="button" class="touch-key" data-key="1">1</button>
+        <button type="button" class="touch-key" data-key="2">2</button>
+        <button type="button" class="touch-key" data-key="3">3</button>
+        <button type="button" class="touch-key" data-key="4">4</button>
+        <button type="button" class="touch-key" data-key="5">5</button>
+        <button type="button" class="touch-key" data-key="6">6</button>
+        <button type="button" class="touch-key" data-key="7">7</button>
+        <button type="button" class="touch-key" data-key="8">8</button>
+        <button type="button" class="touch-key" data-key="9">9</button>
+        <button type="button" class="touch-key" data-key="0">0</button>
+      </div>
+      <div class="touch-keyboard-row">
+        <button type="button" class="touch-key" data-key="-">-</button>
+        <button type="button" class="touch-key" data-key="_">_</button>
+        <button type="button" class="touch-key touch-key-space" data-key=" ">SPACE</button>
+        <button type="button" class="touch-key touch-key-wide" data-action="backspace" aria-label="Backspace">&#9003;</button>
+      </div>
+    </div>
     <div class="name-entry-buttons">
       <button id="nameSubmit" type="button">Submit</button>
       <button id="nameSkip" type="button">Skip</button>
