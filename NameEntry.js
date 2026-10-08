@@ -67,27 +67,48 @@ function getNameEntryElements() {
                 break;
         }
     });
-    // Mobile browsers can leave a tapped button's :active/:focus styling "stuck" on
-    // instead of releasing it after the tap ends, so the pressed look is instead applied
-    // and cleared explicitly, and focus is dropped once the tap sequence finishes.
-    touchDpad.addEventListener('pointerdown', e => {
-        const button = e.target.closest('.dpad-btn');
-        if (button && !button.disabled) {
-            button.classList.add('dpad-btn-pressed');
-        }
-    });
-    const releaseTouchDpadButtons = () => {
-        touchDpad.querySelectorAll('.dpad-btn-pressed').forEach(button => {
-            button.classList.remove('dpad-btn-pressed');
-            button.blur();
-        });
-    };
-    touchDpad.addEventListener('pointerup', releaseTouchDpadButtons);
-    touchDpad.addEventListener('pointercancel', releaseTouchDpadButtons);
-    touchDpad.addEventListener('pointerleave', releaseTouchDpadButtons);
+    setUpDpadPressedHighlight(touchDpad);
     submit.addEventListener('click', submitName);
     skip.addEventListener('click', skipNameEntry);
     return nameEntryElements;
+}
+
+// Mobile browsers can leave a tapped button's :active/:focus styling "stuck" on instead of
+// releasing it after the tap ends - iOS Safari in particular has a known bug (notably since
+// 17.4.1) where pointerup/touchend can silently stop being delivered to the element that
+// received the pointerdown/touchstart. So the pressed look is applied/cleared manually via a
+// class, release handlers are attached at the document level per Apple's own workaround
+// rather than on the button itself, "click" (which keeps firing even when pointerup doesn't)
+// is also treated as a release signal, and a short timeout self-heals it if every event-based
+// release is missed.
+function setUpDpadPressedHighlight(touchDpad) {
+    const PRESSED_CLASS = 'dpad-btn-pressed';
+    const SAFETY_TIMEOUT_MS = 500;
+
+    touchDpad.addEventListener('pointerdown', e => {
+        const button = e.target.closest('.dpad-btn');
+        if (!button || button.disabled) {
+            return;
+        }
+        button.classList.add(PRESSED_CLASS);
+        clearTimeout(button._dpadPressedSafetyTimer);
+        button._dpadPressedSafetyTimer = setTimeout(() => {
+            button.classList.remove(PRESSED_CLASS);
+        }, SAFETY_TIMEOUT_MS);
+    });
+
+    const releaseAllDpadButtons = () => {
+        document.querySelectorAll('.' + PRESSED_CLASS).forEach(button => {
+            button.classList.remove(PRESSED_CLASS);
+            clearTimeout(button._dpadPressedSafetyTimer);
+            button.blur();
+        });
+    };
+    // Attached to the document (capture phase) rather than the dpad itself, since the iOS
+    // bug above specifically stops delivering further events to the original target.
+    ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'mouseup', 'click'].forEach(type => {
+        document.addEventListener(type, releaseAllDpadButtons, true);
+    });
 }
 
 function setNameEntryMessage(text, colour = 'white') {

@@ -1,7 +1,7 @@
 // sw.js
 // Change the cache name when updating to cause cache refresh on progressive web apps
 
-const CACHE_NAME = 'pacman-cache-Oct-08-2026-dpad-save-overlap-callout-fix';
+const CACHE_NAME = 'pacman-cache-Oct-08-2026-dpad-ios-stuck-highlight-fix';
 const FILES_TO_CACHE = [
   '/pacman/',
   '/pacman/index.html',
