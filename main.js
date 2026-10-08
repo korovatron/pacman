@@ -3,6 +3,13 @@
 window.addEventListener('resize', resizeCanvas);
 window.addEventListener('orientationchange', resizeCanvas);
 //window.addEventListener('load', resizeCanvas);
+if (window.visualViewport) {
+    // Mobile keyboards change visualViewport's size/offset without firing a window
+    // resize event (especially on iOS), so listen directly to keep the canvas fitted
+    // above the keyboard instead of hidden behind it.
+    window.visualViewport.addEventListener('resize', resizeCanvas);
+    window.visualViewport.addEventListener('scroll', resizeCanvas);
+}
 const pressedKeys = new Set();
 const isKeyDown = (key) => pressedKeys.has(key);
 
@@ -1607,11 +1614,21 @@ function setGhostHouseTimer() {
 }
 
 function resizeCanvas() {
+    if (!canvas) {
+        return; // visualViewport can fire before init() has created the canvas
+    }
 
     const gameWidth = canvas.width;
     const gameHeight = canvas.height;
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
+    // Use the visualViewport size/offset rather than window.innerWidth/Height so the canvas
+    // shrinks to fit the space still visible above an on-screen keyboard (iOS in particular
+    // leaves window.innerHeight unchanged when the keyboard opens) instead of being rendered
+    // full-height behind it.
+    const viewport = window.visualViewport;
+    const windowWidth = viewport ? viewport.width : window.innerWidth;
+    const windowHeight = viewport ? viewport.height : window.innerHeight;
+    const viewportOffsetX = viewport ? viewport.offsetLeft : 0;
+    const viewportOffsetY = viewport ? viewport.offsetTop : 0;
 
     const scaleX = windowWidth / gameWidth;
     const scaleY = windowHeight / gameHeight;
@@ -1619,8 +1636,8 @@ function resizeCanvas() {
 
     canvas.style.transform = `scale(${scale})`;
     canvas.style.position = 'absolute';
-    canvas.style.left = `${(windowWidth - gameWidth * scale) / 2}px`;
-    canvas.style.top = `${(windowHeight - gameHeight * scale) / 2}px`;
+    canvas.style.left = `${viewportOffsetX + (windowWidth - gameWidth * scale) / 2}px`;
+    canvas.style.top = `${viewportOffsetY + (windowHeight - gameHeight * scale) / 2}px`;
 }
 
 function performTouchTap(x, y) {

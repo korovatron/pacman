@@ -98,8 +98,16 @@ function updateNameEntryLayout() {
     const { panel } = getNameEntryElements();
     const canvasRect = canvas.getBoundingClientRect();
     const canvasScale = canvasRect.width / baseWidth;
-    panel.style.left = `${canvasRect.left + (baseWidth / 2) * canvasScale}px`;
-    panel.style.top = `${canvasRect.top + NAME_PANEL_Y * canvasScale}px`;
+    // getBoundingClientRect() is relative to the layout viewport, but this panel uses
+    // position: fixed, which mobile browsers anchor to the visual viewport instead. When
+    // the on-screen keyboard opens, iOS pans the visual viewport to keep the focused input
+    // in view, so without this correction the panel drifts away from the canvas underneath
+    // it. Subtracting the visual viewport's offset converts back to visual-viewport space.
+    const viewport = window.visualViewport;
+    const viewportOffsetX = viewport ? viewport.offsetLeft : 0;
+    const viewportOffsetY = viewport ? viewport.offsetTop : 0;
+    panel.style.left = `${canvasRect.left + (baseWidth / 2) * canvasScale - viewportOffsetX}px`;
+    panel.style.top = `${canvasRect.top + NAME_PANEL_Y * canvasScale - viewportOffsetY}px`;
     panel.style.transform = `translate(-50%, -50%) scale(${canvasScale})`;
 }
 
