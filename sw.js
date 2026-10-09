@@ -1,7 +1,7 @@
 // sw.js
 // Change the cache name when updating to cause cache refresh on progressive web apps
 
-const CACHE_NAME = 'pacman-cache-Oct-09-2026-mute-hover-cursor';
+const CACHE_NAME = 'pacman-cache-Oct-09-2026-profanity-filter-negro';
 const FILES_TO_CACHE = [
   '/pacman/',
   '/pacman/index.html',
