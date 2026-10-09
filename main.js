@@ -306,6 +306,20 @@ document.addEventListener("mousedown", function (e) {
     getMouseClickPosition(canvas, e);
 });
 
+document.addEventListener("mousemove", function (e) {
+    if (!canvas) return;
+    let rect = canvas.getBoundingClientRect();
+    let x = (e.clientX - rect.left) / scale;
+    let y = (e.clientY - rect.top) / scale;
+    let overMute = false;
+    if (game == 0) {
+        overMute = x > xOffset + 205 && x < xOffset + 248 && y > yOffset + 495 && y < yOffset + 527;
+    } else if (game == 0.5 || game == 1 || game == 2 || game == 3) {
+        overMute = x > xOffset + 315 && x < xOffset + 358 && y > yOffset + 512 && y < yOffset + 544;
+    }
+    canvas.style.cursor = overMute ? "pointer" : "default";
+});
+
 // #endregion
 
 // #region gameLoop
